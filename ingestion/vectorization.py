@@ -1,3 +1,4 @@
+
 from pyspark import SparkContext, SparkConf
 import boto3
 import os
@@ -7,13 +8,15 @@ import librosa
 import warnings
 from scipy import stats
 import json
+from pyspark.sql.session import SparkSession
+from pyspark.sql.types import FloatType
 
 """
 feature extraction functions
 """
+
 def columns():
-    feature_sizes = dict(chroma_stft=12, mfcc=20, rmse=1, zcr=1, spectral_centroid=1, tonnetz=6)
-    # chroma_cqt=12, chroma_cens=12, spectral_bandwidth=1, spectral_contrast=7, spectral_rolloff=1
+    feature_sizes = dict(zcr=1, chroma_stft=12, spectral_centroid=1, spectral_rolloff=1, mfcc=20)
     moments = ('mean', 'std', 'skew', 'kurtosis', 'median', 'min', 'max')
 
     columns = []
@@ -27,7 +30,6 @@ def columns():
 
     # More efficient to slice if indexes are sorted.
     return columns.sort_values()
-
 
 
 def compute_features(AUDIO_DIR):
@@ -62,8 +64,8 @@ def compute_features(AUDIO_DIR):
         #feature_stats('chroma_cqt', f)
         #f = librosa.feature.chroma_cens(C=cqt, n_chroma=12, n_octaves=7)
         #feature_stats('chroma_cens', f)
-        f = librosa.feature.tonnetz(chroma=f)
-        feature_stats('tonnetz', f)
+        #f = librosa.feature.tonnetz(chroma=f)
+        #feature_stats('tonnetz', f)
 
         del cqt
         stft = np.abs(librosa.stft(x, n_fft=2048, hop_length=512))
@@ -73,16 +75,16 @@ def compute_features(AUDIO_DIR):
 
         f = librosa.feature.chroma_stft(S=stft**2, n_chroma=12)
         feature_stats('chroma_stft', f)
-        f = librosa.feature.rms(S=stft)
-        feature_stats('rmse', f)
+        #f = librosa.feature.rmse(S=stft)
+        #feature_stats('rmse', f)
         f = librosa.feature.spectral_centroid(S=stft)
         feature_stats('spectral_centroid', f)
         #f = librosa.feature.spectral_bandwidth(S=stft)
         #feature_stats('spectral_bandwidth', f)
         #f = librosa.feature.spectral_contrast(S=stft, n_bands=6)
         #feature_stats('spectral_contrast', f)
-        #f = librosa.feature.spectral_rolloff(S=stft)
-        #feature_stats('spectral_rolloff', f)
+        f = librosa.feature.spectral_rolloff(S=stft)
+        feature_stats('spectral_rolloff', f)
 
         mel = librosa.feature.melspectrogram(sr=sr, S=stft**2)
         del stft
@@ -92,37 +94,38 @@ def compute_features(AUDIO_DIR):
     except Exception as e:
         print('{}: {}'.format(AUDIO_DIR, repr(e)))
 
-    return np.array(features)
+    return np.array(features).tolist()
 
 
 if __name__ == '__main__':
-   
- 
-    """
-    set up s3 connection
-    """
-    
+
+    os.environ["PYSPARK_PYTHON"]="/usr/bin/python3.7"
+    os.environ["PYSPARK_DRIVER_PYTHON"]="/usr/bin/python3.7"
+
     client = boto3.client('s3')
     bucketName = 'yvonneleoo'
-    conf = SparkConf().setAppName('tiktok-music').setMaster('local')
+    conf = SparkConf().setAppName('tiktok-music').setMaster('spark://10.0.0.12:7077')
     sc = SparkContext(conf=conf)
-    key = 'tiktok-music/fma_large/000/000002.mp3'
+    spark = SparkSession.builder.appName('tiktok-music').getOrCreate()
 
-   
-    file = './temp.mp3'
+    # loop over music files in the bucket, vectorization
+
+    key = '000002.mp3' 
+
+    ## download to ec2 master first 
+    file = './temp.mp3'  
     with open(file,'wb') as data:
         client.download_file(bucketName,key,file)
-   
-    if not file:
-        print('fail to get the file.')
 
-    features = compute_features(file)
-    temp = key.split('/')
-    temp_1 = [int(temp[3].split('.mp3')[0]), temp[2]]
-    
-    import csv
-    out_file = './test.csv'
-    with open(out_file, 'a+') as f:
-    	 wr = csv.writer(f, quoting=csv.QUOTE_ALL)
-    	 wr.writerow(temp_1 + features.tolist())   
-    
+    ## vectorizatin and store into df format
+    #temp = key.split('/')
+    #track_id, genres = int(temp[3].split('.mp3')[0]), temp[2] # song info
+    track_id, genres = float(2), float(0)
+    l = [tuple([track_id, genres] + compute_features(file))] # into df
+    columns = ['track_id', 'genres'] + ['feature_' + str(i) for i in range(245)]
+    df = spark.createDataFrame(l, columns)
+    df.show()
+    df.coalesce(1).write.option('header','false').parquet(path="s3a://yvonneleoo/music/",mode='append')
+
+    df1 = spark.read.load('s3a://yvonneleoo/music/')
+    df1.show()

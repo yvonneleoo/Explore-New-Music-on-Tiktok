@@ -3,7 +3,7 @@ import boto3
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import FloatType
 import time
-from music_vectorization import vectorization
+from vectorization import Vectorization
 
 if __name__ == '__main__':   
     # set up coding environment and connection to s3
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     spark = SparkSession.builder.appName('tiktok-music').getOrCreate()
 
     # initialization
-    vect = vectorization(client = client)
+    vect = Vectorization(client = client)
     col = ['track_id'] + ['feature_' + str(i) for i in range(245)]
     total_record = 106574
     count = 0

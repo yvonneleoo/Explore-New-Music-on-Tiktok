@@ -11,7 +11,6 @@ import boto3
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import FloatType
 import time
-from music_vectorization import vectorization
 
 class vectorization(object):
 	

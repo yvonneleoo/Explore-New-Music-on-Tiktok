@@ -146,7 +146,7 @@ if __name__ == '__main__':
             except Exception as e:
                 print('{}: {}'.format(track_id, repr(e)))
             
-            if count % 10000 == 0 or count == total_record: # leave 0 there on purpose to see whether it could be saved 
+            if count % 10000 == 0 or count == total_record:  
                 try:
                     start_time = time.time()
                     df = spark.createDataFrame(lst, col) # into df

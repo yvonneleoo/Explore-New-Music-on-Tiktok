@@ -1,4 +1,3 @@
-
 from pyspark import SparkContext, SparkConf
 import boto3
 import os
@@ -10,6 +9,7 @@ from scipy import stats
 import json
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import FloatType
+import time
 
 """
 feature extraction functions
@@ -19,25 +19,24 @@ def columns():
     feature_sizes = dict(zcr=1, chroma_stft=12, spectral_centroid=1, spectral_rolloff=1, mfcc=20)
     moments = ('mean', 'std', 'skew', 'kurtosis', 'median', 'min', 'max')
 
-    columns = []
+    columns1 = []
     for name, size in feature_sizes.items():
         for moment in moments:
             it = ((name, moment, '{:02d}'.format(i+1)) for i in range(size))
-            columns.extend(it)
+            columns1.extend(it)
 
     names = ('feature', 'statistics', 'number')
-    columns = pd.MultiIndex.from_tuples(columns, names=names)
+    columns1 = pd.MultiIndex.from_tuples(columns1, names=names)
 
     # More efficient to slice if indexes are sorted.
-    return columns.sort_values()
+    return columns1.sort_values()
 
 
 def compute_features(AUDIO_DIR):
 
     features = pd.Series(index=columns(), dtype=np.float32, name=AUDIO_DIR)
 
-    # Catch warnings as exceptions (audioread leaks file descriptors).
-    # warnings.filterwarnings('error', module='librosa')
+    # Catch warnings as exceptions (audioread leaks file descriptors)
 
     def feature_stats(name, values):
         features[name, 'mean'] = np.mean(values, axis=1)
@@ -96,36 +95,65 @@ def compute_features(AUDIO_DIR):
 
     return np.array(features).tolist()
 
+def music_vetorization(bucketName, key, track_id, lst):                     
+             
+    ## download to ec2 master first 
+    local_path = './music/' + key.split('/')[3]
+    with open(local_path,'wb') as data:
+        client.download_file(bucketName, key, local_path)
+              
+    ## vectorizatin and store into df format
+    start_time = time.time()
+    lst.append(tuple([track_id] + compute_features(local_path)))
+    duration = round(time.time() - start_time, 4)
+    print(f"vectorization in {duration} seconds") 
+                  
+
 
 if __name__ == '__main__':
 
+    # set up coding environment and connection to s3
     os.environ["PYSPARK_PYTHON"]="/usr/bin/python3.7"
     os.environ["PYSPARK_DRIVER_PYTHON"]="/usr/bin/python3.7"
 
+    s3_ = boto3.resource('s3')
     client = boto3.client('s3')
     bucketName = 'yvonneleoo'
-    conf = SparkConf().setAppName('tiktok-music').setMaster('spark://10.0.0.12:7077')
+    conf = SparkConf().setAppName('tiktok-music').setMaster('local')
     sc = SparkContext(conf=conf)
     spark = SparkSession.builder.appName('tiktok-music').getOrCreate()
 
-    # loop over music files in the bucket, vectorization
+    # initialization
+    count = 0
+    col = ['track_id'] + ['feature_' + str(i) for i in range(245)]
+    total_record = 106574
+    lst = []
 
-    key = '000002.mp3' 
+    # loop over music files from the bucket, vectorization  
+    for obj in s3_.Bucket('yvonneleoo').objects.all():
 
-    ## download to ec2 master first 
-    file = './temp.mp3'  
-    with open(file,'wb') as data:
-        client.download_file(bucketName,key,file)
+        key = obj.key
+        rule = ('.mp3' in key)
 
-    ## vectorizatin and store into df format
-    #temp = key.split('/')
-    #track_id, genres = int(temp[3].split('.mp3')[0]), temp[2] # song info
-    track_id, genres = float(2), float(0)
-    l = [tuple([track_id, genres] + compute_features(file))] # into df
-    columns = ['track_id', 'genres'] + ['feature_' + str(i) for i in range(245)]
-    df = spark.createDataFrame(l, columns)
-    df.show()
-    df.coalesce(1).write.option('header','false').parquet(path="s3a://yvonneleoo/music/",mode='append')
+        if rule: ## rules are based on the sub-genre
 
-    df1 = spark.read.load('s3a://yvonneleoo/music/')
-    df1.show()
+            track_id= int(key.split('/')[3].split('.mp3')[0]) # song track_id                       
+            count +=1
+            print(count, track_id, key)
+
+            try:
+                music_vetorization(bucketName, key, track_id, lst) 
+            except Exception as e:
+                print('{}: {}'.format(track_id, repr(e)))
+            
+            if count % 10000 == 0 or count == total_record: # leave 0 there on purpose to see whether it could be saved 
+                try:
+                    start_time = time.time()
+                    df = spark.createDataFrame(lst, col) # into df
+                    df.coalesce(1).write.option("header","false").parquet(path="s3a://yvonneleoo/music-vector/", mode="append")
+                    duration = round(time.time() - start_time, 4)
+                    print(f"save file in {duration} seconds")   
+                    lst = [] 
+
+                except Exception as e:
+                    print('{}: {}'.format(track_id, repr(e)))

@@ -49,7 +49,7 @@ def compute_features(AUDIO_DIR):
 
     try:
         #filepath = utils.get_audio_path(os.environ.get(AUDIO_DIR))
-        x, sr = librosa.load(AUDIO_DIR, sr=None, mono=True)  # kaiser_fast
+        x, sr = librosa.load(AUDIO_DIR, sr=None, mono=True)  
 
         f = librosa.feature.zero_crossing_rate(x, frame_length=2048, hop_length=512)
         feature_stats('zcr', f)

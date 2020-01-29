@@ -36,8 +36,6 @@ def compute_features(AUDIO_DIR):
 
     features = pd.Series(index=columns(), dtype=np.float32, name=AUDIO_DIR)
 
-    # Catch warnings as exceptions (audioread leaks file descriptors)
-
     def feature_stats(name, values):
         features[name, 'mean'] = np.mean(values, axis=1)
         features[name, 'std'] = np.std(values, axis=1)
@@ -48,7 +46,6 @@ def compute_features(AUDIO_DIR):
         features[name, 'max'] = np.max(values, axis=1)
 
     try:
-        #filepath = utils.get_audio_path(os.environ.get(AUDIO_DIR))
         x, sr = librosa.load(AUDIO_DIR, sr=None, mono=True)  
 
         f = librosa.feature.zero_crossing_rate(x, frame_length=2048, hop_length=512)
@@ -108,8 +105,6 @@ def music_vetorization(bucketName, key, track_id, lst):
     duration = round(time.time() - start_time, 4)
     print(f"vectorization in {duration} seconds") 
                   
-
-
 if __name__ == '__main__':
 
     # set up coding environment and connection to s3
@@ -135,8 +130,8 @@ if __name__ == '__main__':
         key = obj.key
         rule = ('.mp3' in key)
 
-        if rule: ## rules are based on the sub-genre
-
+        if rule: 
+            
             track_id= int(key.split('/')[3].split('.mp3')[0]) # song track_id                       
             count +=1
             print(count, track_id, key)

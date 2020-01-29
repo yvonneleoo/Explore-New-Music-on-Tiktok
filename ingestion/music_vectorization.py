@@ -12,7 +12,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import FloatType
 import time
 
-class vectorization(object):
+class Vectorization(object):
 	
     def __init__(self, client):
 	self.client = client

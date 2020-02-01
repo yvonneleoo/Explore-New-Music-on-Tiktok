@@ -6,7 +6,7 @@ s3cmd put -vr fma_metalarge s3://yvonneleoo/tiktok-music/;
 # download the tiktok data to prosgresql directly
 wget 'https://files.pushshift.io/tiktok/tiktok_25000000_sample.ndjson.zst';
 zstd -d tiktok_25000000_sample.ndjson.zst;
-psql -h ec2-34-197-195-174.compute-1.amazonaws.com -U postgres -d music_tiktok -c "CREATE TABLE tiktok(data varchar(1000))";
+psql -h ec2-34-197-195-174.compute-1.amazonaws.com -U postgres -d music_tiktok -c "CREATE TABLE tiktok(data varchar(10000))";
 cat tiktok_25000000_sample.ndjson | psql -h ec2-34-197-195-174.compute-1.amazonaws.com -U postgres -d music_tiktok -c "\COPY tiktok (data) FROM STDIN";
 
 # download the fma meta data to s3

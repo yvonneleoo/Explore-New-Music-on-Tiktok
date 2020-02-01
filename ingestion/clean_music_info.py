@@ -38,24 +38,31 @@ if __name__ == '__main__':
     df_track.columns = df_track.columns.droplevel()
     track = spark.createDataFrame(df_track.astype(str))
     assert " " not in ''.join(track.columns) 
-    track = track.withColumn('genre_1', regexp_extract(col('genres'), '(\[)(\w+)(.+)',2)) # flatten genre info and  capture the first genre
-    track = track.withColumn('song_name', trim(lower(col('title'))))
+    track = track.withColumn('genre_1', regexp_extract(col('genres'), '(\[)(\w+)(.+)', 2)) # flatten genre info and  capture the first genre
+    track = track.withColumn('song_name', regexp_replace(col('title'), '\([\w ]+\)', ''))
+    track = track.withColumn('song_name', regexp_replace(col('song_name'), '[_#+\W+\".!?\\-\/]', ''))
+    track = track.filter(track.song_name != '')
+    track = track.withColumn('song_name', trim(lower(col('song_name'))))
 
     ## artist
     df_artist = df.loc[:, df.columns.get_level_values(0).isin({'track_id','artist'})]
     df_artist.columns = df_artist.columns.droplevel()
     artist = spark.createDataFrame(df_artist.astype(str))
     assert " " not in ''.join(artist.columns)
-    artist = artist.withColumn('artist_name', trim(lower(col('name'))))
+    artist = artist.withColumn('artist_name', regexp_replace(col('name'), '\([\w ]+\)', ''))
+    artist = artist.withColumn('artist_name', regexp_replace(col('artist_name'), '[_#+\W+\".!?\\-\/]', ''))
+    artist = artist.filter(artist.artist_name != '')
+    artist = artist.withColumn('artist_name', trim(lower(col('artist_name'))))
 
     ## genres
     obj_genres = client.get_object(Bucket=bucketName, Key='tiktok-music/fma_metadata/genres.csv')
     df_genres = pd.read_csv(obj_genres['Body'])
     genres = spark.createDataFrame(df_genres.astype(str))
 
+
     ## clean info
     clean_info = track.join(artist,track.track_id == artist.track_id, how = 'left').select(track['track_id'], concat(track['song_name'],lit('_'),artist['artist_name']).alias("track_name"), track['genre_1'], track['title'].alias('original_song_name'), artist['title'].alias('original_artist_name'))
-    clean_info = clean_info.join(genres, clean_info.genre_1 == genres.genre_id, how = 'left').select(clean_info['*'], genres['title'].alias('genre_name'), genres['top_level'])
+    clean_info = clean_info.join(genres, clean_info.genre_1 == genres.genre_id, how = 'left').select(clean_info['*'], genres['title'].alias('genre_name'), genres['top_level']).sort(col('track_name'))
     clean_info.show() 
     
     # save to the postgre

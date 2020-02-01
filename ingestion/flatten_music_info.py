@@ -55,7 +55,7 @@ if __name__ == '__main__':
     genres = spark.createDataFrame(df_genres.astype(str))
 
     ## clean info
-    clean_info = track.join(artist,track.track_id == artist.track_id, how = 'left').select(track['track_id'], concat(track['song_name'],lit('_'),artist['artist_name']).alias("tack_name"), track[$
+    clean_info = track.join(artist,track.track_id == artist.track_id, how = 'left').select(track['track_id'], concat(track['song_name'],lit('_'),artist['artist_name']).alias("track_name"), track[$
     clean_info = clean_info.join(genres, clean_info.genre_1 == genres.genre_id, how = 'left').select(clean_info['*'], genres['title'].alias('genre_name'), genres['top_level'])
     clean_info.show() 
     

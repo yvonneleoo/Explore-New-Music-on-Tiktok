@@ -16,7 +16,8 @@ if __name__ == '__main__':
     conf = SparkConf().setAppName('tiktok-music').setMaster('local')
     sc = SparkContext(conf=conf)
     spark = SparkSession.builder.appName('tiktok-music').getOrCreate()
-
+    sqlContext = SQLContext(sc)
+    
     # initialization
     vect = Vectorization(client = client)
     col = ['track_id'] + ['feature_' + str(i) for i in range(245)]
@@ -53,7 +54,7 @@ if __name__ == '__main__':
                     print('{}: {}'.format(track_id, repr(e)))
                     
      ## store by genres   
-     pc = PosgreConnector(sc)
+     pc = PosgreConnector(sqlContext)
      music_info = pc.read_from_db('clean_music_info')
      top_level = [a[0] for a in np.array(music_info.select('top_level').distinct().collect())]
      columns = [f.col('feature_' + str(i)) for i in range(245)]

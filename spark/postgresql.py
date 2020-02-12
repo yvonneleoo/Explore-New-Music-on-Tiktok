@@ -16,6 +16,5 @@ class PosgreConnector(object):
     def read_from_db(self, table_name):
         return self.sqlContext.read.jdbc(url=self.url, table='public.%s'%table_name, properties=self.properties)
 
-
     def write_to_db(self, df, table_name, mode='append'):
         df.write.jdbc(url=self.url, table='public.%s'%table_name, mode=mode, properties=self.properties)

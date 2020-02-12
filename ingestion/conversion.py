@@ -4,6 +4,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import FloatType
 import time
 from vectorization import Vectorization
+from posgresql import PosgreConnector
 
 if __name__ == '__main__':   
     # set up coding environment and connection to s3
@@ -42,9 +43,35 @@ if __name__ == '__main__':
                 try:
                     start_time = time.time()
                     df = spark.createDataFrame(lst, col) # into df
-                    df.coalesce(1).write.option("header","false").parquet(path="s3a://yvonneleoo/music-vector/", mode="append")
+                    df.coalesce(1).write\
+                      .option("header","false")\
+                      .parquet(path="s3a://yvonneleoo/music-vector/", mode="append")
                     duration = round(time.time() - start_time, 4)
                     print(f"save file in {duration} seconds")   
                     lst = [] 
                 except Exception as e:
                     print('{}: {}'.format(track_id, repr(e)))
+                    
+     ## store by genres   
+     pc = PosgreConnector(sc)
+     music_info = pc.read_from_db('clean_music_info')
+     top_level = [a[0] for a in np.array(music_info.select('top_level').distinct().collect())]
+     columns = [f.col('feature_' + str(i)) for i in range(245)]
+     for genre in top_level:
+       
+         if genre:
+             id_list = [a[0] for a in music_info.filter(col('top_level')==int(genre)).select('track_id').collect()[0].track_id]
+             df = music_vect.filter(music_vect.track_id.isin(id_list))\
+                            .withColumn('genre', lit(genre))\
+                            .withColumn('features', f.array(columns))
+         else:
+             id_list = [a[0] for a in music_info.filter(col('top_level')== genre).select('track_id').collect()[0].track_id]
+             df = music_vect.filter(music_vect.track_id.isin(id_list))\
+                            .withColumn('genre', lit('None'))\
+                            .withColumn('features', f.array(columns))
+      
+         df.select('track_id', 'genre', 'features').show()
+         df.select('track_id', 'genre', 'features')\
+           .coalesce(1).write.partitionBy('genre')\
+           .option("header","false")\
+           .parquet(path="s3a://yvonneleoo/music-vector-by-genres/", mode="append")

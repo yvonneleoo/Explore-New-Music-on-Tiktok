@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+        <head>
+                <title>Choose a genre first</title>
+                <meta charset="UTF-8">
+                <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Karma">
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+                <style>
+                    body,h1,h2,h3,h4,h5,h6,.w3-wide {font-family: "Montserrat", sans-serif;}
+                    th, td {
+                    padding: 15px;
+                    border-bottom: 1px solid #ddd;
+                     }
+                    th {
+                    background-color: #FCD16B;
+                     }
+                    tr:hover {background-color: #FCD16B;}
+                 </style>
+    </head>
+    <body bgcolor="#FCD16B">
+        <div align="center" style="height:250px; padding-top: 200px;">
+                <h3  class="w3-center w3-padding-16" >Select a genre for your song first, and click Submit.</h3>
+                <select name="genre" method="GET" form="genreform">
+                     {% for genre in genre_list %}
+                     <option value="{{genre}}" SELECTED>{{genre}}</option>"
+                     {% endfor %}
+                </select>
+         </div>
+         <div align="center" style="height:10px; padding-top: 260px;">
+                <form action="/upload" id="genreform">
+                    <input type="submit" />
+                </form>
+         </div>
+        <div align="center" style="height:250px; padding-top: 70px;">
+            <p><a href="/"><font color="#CB9E23">Back to Home Page</font></a></p>
+        </div>
+    </body>
+</html>
+

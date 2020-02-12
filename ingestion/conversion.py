@@ -60,17 +60,18 @@ if __name__ == '__main__':
      for genre in top_level:
        
          if genre:
-             id_list = [a[0] for a in music_info.filter(col('top_level')==int(genre)).select('track_id').collect()[0].track_id]
+             id_list = [a[0] for a in music_info.filter(col('top_level')==int(genre))\
+                                                .select('track_id').collect()[0].track_id]
              df = music_vect.filter(music_vect.track_id.isin(id_list))\
                             .withColumn('genre', lit(genre))\
                             .withColumn('features', f.array(columns))
          else:
-             id_list = [a[0] for a in music_info.filter(col('top_level')== genre).select('track_id').collect()[0].track_id]
+             id_list = [a[0] for a in music_info.filter(col('top_level')== genre)\
+                                                .select('track_id').collect()[0].track_id]
              df = music_vect.filter(music_vect.track_id.isin(id_list))\
                             .withColumn('genre', lit('None'))\
                             .withColumn('features', f.array(columns))
       
-         df.select('track_id', 'genre', 'features').show()
          df.select('track_id', 'genre', 'features')\
            .coalesce(1).write.partitionBy('genre')\
            .option("header","false")\

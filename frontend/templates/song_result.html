@@ -1,0 +1,51 @@
+!DOCTYPE html>
+<html>
+        <head>
+                <title>Present the Result to your song here</title>
+                <meta charset="UTF-8">
+                <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Karma">
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awes$
+                <style>
+                    body,h1,h2,h3,h4,h5,h6,.w3-wide {font-family: "Montserrat", sans-serif;}
+                    th, td {
+                            padding: 15px;
+                            border-bottom: 1px solid #ddd;
+                            }
+                        th {
+                            background-color: #FCD16B;
+                            }
+                        tr:hover {background-color: #FCD16B;}
+                </style>
+    </head>
+    <body bgcolor="#FCD16B">
+        <div align="center" style="height:250px; padding-top: 200px;">
+                <h3  class="w3-center w3-padding-16" >Top-5 most similar songs to yours.</h3>
+                {% for table in tables %}
+                    {{titles[loop.index]}}
+                    {{ table|safe }}
+                {% endfor %}
+        <div align="center" style="height:250px; padding-top: 50px;">
+             <p><a href="/tiktok_result"><font color="#27223C">See their TikTok application.</font></a></p>
+        </div>
+        </div>
+        <div align="center" style="height:250px; padding-top: 370px;">
+                <p><a href="/genre"><font color="#CB9E23">Select a new song again.</font></a></p>
+        </div>
+    </body>
+</html>
+
+<script
+  src="https://code.jquery.com/jquery-3.4.1.js"
+  integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
+  crossorigin="anonymous"></script>
+
+<script>
+$('tr').click (function () {
+   target = $(this).children('td').text();
+   window.location.href = "/tiktok?target="+target;
+
+})
+</script>

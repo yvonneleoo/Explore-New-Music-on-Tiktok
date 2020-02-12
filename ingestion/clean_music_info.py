@@ -5,10 +5,16 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.types import *
 from pyspark.sql import DataFrameReader, SQLContext
 from pyspark.sql.functions import *
+from pyspark.ml.feature import RegexTokenizer, StopWordsRemover, CountVectorizer, IDF
+from pyspark.sql.types import BooleanType
+from pyspark.sql import functions as f
 
 import pandas as pd
 import os
 import time
+
+from posgresql import PosgreConnector
+from text_processor import CleanTrackName
 
 if __name__ == '__main__':
 
@@ -19,8 +25,11 @@ if __name__ == '__main__':
     s3_ = boto3.resource('s3')
     client = boto3.client('s3')
     bucketName = 'yvonneleoo'
-    conf = SparkConf().setAppName('tiktok-music').setMaster('local')
+    conf = SparkConf().setAppName('tiktok-music').setMaster('spark://10.0.0.12:7077')
     sc = SparkContext(conf=conf)
+    sc.addPyFile('text_processor.py')
+    sc.addPyFile('posgresql.py')
+
     sqlContext = SQLContext(sc)
     spark = SparkSession(sc).builder.appName('tiktok-music').getOrCreate()
     ## spark.conf.set("spark.sql.execution.arrow.enabled", "true") 
@@ -33,43 +42,54 @@ if __name__ == '__main__':
     col_1[0] = 'track_id'
     df.columns.set_levels(col_1, level=1, inplace=True)
 
+    # clean the text info and capture the first genre for each song
+    ctn = CleanTrackName()   
+
     ## track
     df_track = df.loc[:, df.columns.get_level_values(0).isin({'track_id','track'})]
     df_track.columns = df_track.columns.droplevel()
     track = spark.createDataFrame(df_track.astype(str))
-    assert " " not in ''.join(track.columns) 
+     assert " " not in ''.join(track.columns) 
     track = track.withColumn('genre_1', regexp_extract(col('genres'), '(\[)(\w+)(.+)', 2)) # flatten genre info and  capture the first genre
-    track = track.withColumn('song_name', regexp_replace(col('title'), '\([\w ]+\)', ''))
-    track = track.withColumn('song_name', regexp_replace(col('song_name'), '[_#+\W+\".!?\\-\/]', ''))
-    track = track.filter(track.song_name != '')
-    track = track.withColumn('song_name', trim(lower(col('song_name'))))
+    track = ctn.remove_noise(track, 'title')
 
     ## artist
     df_artist = df.loc[:, df.columns.get_level_values(0).isin({'track_id','artist'})]
     df_artist.columns = df_artist.columns.droplevel()
     artist = spark.createDataFrame(df_artist.astype(str))
     assert " " not in ''.join(artist.columns)
-    artist = artist.withColumn('artist_name', regexp_replace(col('name'), '\([\w ]+\)', ''))
-    artist = artist.withColumn('artist_name', regexp_replace(col('artist_name'), '[_#+\W+\".!?\\-\/]', ''))
-    artist = artist.filter(artist.artist_name != '')
-    artist = artist.withColumn('artist_name', trim(lower(col('artist_name'))))
+    artist = ctn.remove_noise(artist, 'name')
 
     ## genres
     obj_genres = client.get_object(Bucket=bucketName, Key='tiktok-music/fma_metadata/genres.csv')
     df_genres = pd.read_csv(obj_genres['Body'])
     genres = spark.createDataFrame(df_genres.astype(str))
-
-
     ## clean info
-    clean_info = track.join(artist,track.track_id == artist.track_id, how = 'left').select(track['track_id'], concat(track['song_name'],lit('_'),artist['artist_name']).alias("track_name"), track['genre_1'], track['title'].alias('original_song_name'), artist['title'].alias('original_artist_name'))
-    clean_info = clean_info.join(genres, clean_info.genre_1 == genres.genre_id, how = 'left').select(clean_info['*'], genres['title'].alias('genre_name'), genres['top_level']).sort(col('track_name'))
+   
+    clean_info = track.join(artist,track.track_id == artist.track_id, how = 'inner')\
+                      .select(track['track_id'],track['title'].alias('song_title'),artist['name'].alias("artist_name"),track['genre_1'],track['original_title'].alias('original$
+                      #.withColumn('name_key_2', substring(artist['name'],0,1))
+    clean_info = clean_info.join(genres, clean_info.genre_1 == genres.genre_id,how = 'left')\
+                           .select(clean_info['*'],genres['title'].alias('subgenre_name'),genres['top_level']).sort(col('song_title'))
+
+    clean_info = clean_info.dropDuplicates(['song_title', 'artist_name'])
+    clean_info = ctn.add_name_key(clean_info, which='music')
+                         
     clean_info.show() 
-    
+    print(clean_info.count())
+    # calculate the TFIDF score vectors for each song title and artist name    
+    text_df = clean_info.select('track_id','song_title', 'artist_name', 'name_key_1')
+    text_df.show()
+
     # save to the postgre
-    url = 'jdbc:postgresql://ec2-34-197-195-174.compute-1.amazonaws.com:5432/music_tiktok'
-    properties = {'user': 'yvonneleoo', 'password':'hongamo669425','driver':'org.postgresql.Driver'}
-    track.write.jdbc(url=url, table = 'public.meta_data_song', mode='append', properties=properties)
-    artist.write.jdbc(url=url, table = 'public.meta_data_artist', mode='append', properties=properties) 
-    genres.write.jdbc(url=url, table = 'public.meta_data_genres', mode='append', properties=properties)
-    clean_info.write.jdbc(url=url, table='public.clean_music_info', mode='append', properties=properties)
+    pc = PosgreConnector(sqlContext)
+    pc.write_to_db(track, 'meta_data_song')
+    pc.write_to_db(artist, 'meta_data_artist')
+    pc.write_to_db(genres, 'meta_data_genres')
+    pc.write_to_db(clean_info, 'music_clean_info')
+    text_df.repartition("name_key_1").write\
+           .partitionBy("name_key_1")\
+           .option("header","false")\
+           .parquet(path="s3a://yvonneleoo/music-name/", mode="append")    
+
     

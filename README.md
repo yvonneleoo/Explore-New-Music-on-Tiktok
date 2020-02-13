@@ -45,7 +45,7 @@ Currently, the overlap between the FMA music dataset and TikTok dataset is not b
 
 The next step would be:
 - Added functions to update the music and TikTok dataset automatically;
-- Added functions to support search the similar music by music titles/artists;
+- Added functions to support searching the similar music by music titles/artists;
 
 Reference
 -----------------

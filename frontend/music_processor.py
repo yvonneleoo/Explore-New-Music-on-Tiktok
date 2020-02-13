@@ -28,8 +28,15 @@ class SimilaritySearch(object):
         return music_vect    
 
     def cal_index(self, new_df, vec_df):
-        max_df = vec_df['features'].apply(lambda x: x - new_df.features).apply(lambda x: sum(x)).nlargest(5, 'features')
-        index = max_df.track_id
+        vec = new_df.features[0]
+        max_df = vec_df['features']\
+                 .apply(lambda x: np.array(x) - np.array(vec))\
+                 .apply(lambda x: sum(x))
+        max_df = pd.DataFrame(max_df)
+        index = max_df.sort_values('features', ascending = True)\
+                 .head(5)\
+                 .index
+
         return index
 
 class MusicProcessor(object):
@@ -98,5 +105,5 @@ class MusicProcessor(object):
         columns = [f.col('feature_' + str(i)) for i in range(245)]
         track_id = str(int(time.time() + int(self.filename.split('.mp3')[0])))
         vect = self.compute_features(self.path)
-        df = pd.DataFrame({"track_id":track_id, "features":vect})
+        df = pd.DataFrame({"track_id":track_id, "features":[vect]})
         return track_id, df, vect

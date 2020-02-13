@@ -49,5 +49,5 @@ The next step would be:
 
 Reference
 -----------------
-[FMA dataset (106,574 tracks of 30s mp3 data collected by 2017-05)](https://github.com/mdeff/fma)
-[TikTok dataset (25,000,000 record samples collected by 2019-12)](https://files.pushshift.io/tiktok/)
+- [FMA dataset (106,574 tracks of 30s mp3 data collected by 2017-05)](https://github.com/mdeff/fma)
+- [TikTok dataset (25,000,000 record samples collected by 2019-12)](https://files.pushshift.io/tiktok/)

@@ -25,7 +25,7 @@ Python/jq -> S3 -> Spark -> PostgresSQL -> Flask
 video_id, video_url, covers, track_id, song_title, artist_name, music_url
 Stored the clean TikTok data in PostgresSQL, partitioning by the first letter of the song title.
 - 'Music meta data': The python files processed FMA music meta data,  joined the track table and genre table, reducing 161 sub-genres to 16 top-genres. Partitioned the track id by top-genres and by the first letter of song titles, and store in the PostgresSQL. 
--  Built a bag-of-words-TFIDF pipeline on Spark, for each music record (title & artist) in the FMA music dataset, search the most similar record (title & artist) in the TikTok dataset (only search within records with the same first letter in title).  Stored the index pairs and similarity scores into PostgreSQL:
+-  Built a bag-of-words-TFIDF pipeline on Spark, for each music record (title & artist) in the FMA music dataset, search the most similar record (title & artist) in the TikTok dataset (only search within records with the same first letter in title), based on cosine similarity.  Stored the index pairs and similarity scores into PostgreSQL:
 'fma_track_id, tiktok_track_id, title_score, artist_socre, total_score'
   
 ### Frontend workflow:

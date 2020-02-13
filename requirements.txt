@@ -20,6 +20,7 @@ python3.7 get-pip.py --user;
 # python dependencies
 sudo python3.7 -m pip install pyspark;
 sudo python3.7 -m pip install boto3;
+sudo python3.7 -m pip install PyArrow>=0.8.0
 sudo python3.7 -m pip install numpy;
 sudo python3.7 -m pip install pandas;
 sudo python3.7 -m pip install flask;

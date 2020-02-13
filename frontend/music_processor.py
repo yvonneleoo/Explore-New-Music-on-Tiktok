@@ -14,30 +14,22 @@ import boto3
 from pyspark import SparkContext, SparkConf
 from pyspark.sql.session import SparkSession
 from pyspark.sql import DataFrameReader, SQLContext
-import faiss
+#import faiss
+import pyarrow.parquet as pq
 
 class SimilaritySearch(object):
     def __init__(self):
         self.path = './music-vector-by-genres/genre='
 
     def get_vect_df(self, top_genre_id, spark):
-        music_vect = spark.read.load(self.path+top_genre_id).select('track_id','features')
+        music_vect = spark.read\
+        .load(self.path+top_genre_id)\
+        .select('track_id','features').to_pandas()
         return music_vect    
 
-    def write_to_faiss(self, new_df, vec_df):
-        vec_df = vec_df.union(new_df) 
-        vec_df.show()
-        sample_vec = vec_df.select('features').limit(1).collect()[0].features
-        num_dimensions = len(sample_vec)
-        index_key = 'IDMap,Flat'
-        index = faiss.index_factory(num_dimensions, index_key)
-        vec_table =  vec_df.collect()
-        ids_list = [row.track_id for row in vec_table]
-        vecs_list = [row.features for row in vec_table]
-        ids_arr = np.array(ids_list, copy=False, dtype=np.int64)
-        vecs_arr = np.array(vecs_list, copy=False, dtype=np.float32)
-        index.train(vecs_arr)
-        index.add_with_ids(vecs_arr, ids_arr)
+    def cal_index(self, new_df, vec_df):
+        max_df = vec_df['features'].apply(lambda x: x - new_df.features).apply(lambda x: sum(x)).nlargest(5, 'features')
+        index = max_df.track_id
         return index
 
 class MusicProcessor(object):
@@ -106,7 +98,5 @@ class MusicProcessor(object):
         columns = [f.col('feature_' + str(i)) for i in range(245)]
         track_id = str(int(time.time() + int(self.filename.split('.mp3')[0])))
         vect = self.compute_features(self.path)
-        df = spark.createDataFrame([tuple([track_id] + vect)], col)\
-                  .withColumn('features', f.array(columns))\
-                  .select('track_id', 'features')
+        df = pd.DataFrame({"track_id":track_id, "features":vect})
         return track_id, df, vect

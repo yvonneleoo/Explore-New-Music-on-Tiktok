@@ -29,8 +29,10 @@ base_dir = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = './static/music'
 ALLOWED_EXTENSIONS = {'wav', 'mp3'} ## only allow users to upload wav and mp3 files
 
-pwd = os.environ['POSTGRES_PWD']
-engine = create_engine('postgresql://yvonneleoo:%s@10.0.0.8:5432/music_tiktok'%pwd) 
+db_ip = os.environ['POSGRES_IP']
+db_pwd = os.environ['POSTGRES_PWD']
+link = 'postgresql://yvonneleoo:%s@%s:5432/music_tiktok'% (db_ip, db_pwd)
+engine = create_engine(link) 
 
 ## genre info
 genre_df = pd.read_sql("SELECT genre_id, title FROM meta_data_genres\

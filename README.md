@@ -36,18 +36,18 @@ Stored the clean TikTok data in PostgresSQL, partitioning by the first letter of
 
 Environment
 -----------------
-1. 3 AWS EC2 clusters. Spark cluster with 5 m4.large nodes; Posgres cluster with 1 m4.large node; Flask cluster with 1 t2.micro node.
-2. Please read the 'requirements.txt' for the required dependencies.
+- 3 AWS EC2 clusters. Spark cluster with 5 m4.large nodes; Posgres cluster with 1 m4.large node; Flask cluster with 1 t2.micro node.
+- Please read the 'requirements.txt' for the required dependencies.
 
 Limitations and To Do
 -----------------
 Currently, the overlap between the FMA music dataset and TikTok dataset is not big enough to guarantee high accuracy.  
 
 The next step would be:
-1. Added functions to update the music and TikTok dataset automatically;
-2. Added functions to support search the similar music by music titles/artists;
+- Added functions to update the music and TikTok dataset automatically;
+- Added functions to support search the similar music by music titles/artists;
 
 Reference
 -----------------
-![FMA dataset (106,574 tracks of 30s mp3 data collected by 2017-05)](https://github.com/mdeff/fma)
-![TikTok dataset (25,000,000 record samples collected by 2019-12)](https://files.pushshift.io/tiktok/)
+[FMA dataset (106,574 tracks of 30s mp3 data collected by 2017-05)](https://github.com/mdeff/fma)
+[TikTok dataset (25,000,000 record samples collected by 2019-12)](https://files.pushshift.io/tiktok/)

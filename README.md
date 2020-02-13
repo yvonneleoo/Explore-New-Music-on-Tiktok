@@ -1,4 +1,4 @@
-# Promote-Music-on-Tiktok
+# Explore-New-Music-on-Tiktok
 > ***picture your audience in the streaming era***
 
 This is a project I completed during the Insight Data Engineering program (New York, 2020 A).

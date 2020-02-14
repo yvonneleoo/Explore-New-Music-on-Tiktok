@@ -99,10 +99,6 @@ class MusicProcessor(object):
         return np.array(features).tolist()
 
     def music_vectorization(self, spark):                     
-        ## download to ec2 master first 
-        ## vectorizatin and store into df format
-        col = ['track_id'] + ['feature_' + str(i) for i in range(245)]
-        columns = [f.col('feature_' + str(i)) for i in range(245)]
         track_id = str(int(time.time() + int(self.filename.split('.mp3')[0])))
         vect = self.compute_features(self.path)
         df = pd.DataFrame({"track_id":track_id, "features":[vect]})

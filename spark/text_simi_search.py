@@ -14,7 +14,7 @@ import pyspark.sql.functions as f
 from pyspark.sql import Row
 from pyspark.sql import Window
 
-from text_processor import CleanTrackName, CalTextSimilarity
+from text_processor import CleanMusicInfo, CalTextSimilarity
 from posgresql import PosgreConnector
 
 if __name__ == '__main__':
@@ -39,16 +39,25 @@ if __name__ == '__main__':
     # conf.set("spark.sql.caseSensitive", "true")
     sc.addPyFile('text_processor.py')
     sc.addPyFile('posgresql.py')
-    bucketName = os.environ['S3_USR']
-
+    
+    cmi = CleanMusicInfo(spark)
+    
     # loop throught each first letter
     name_key_list = [x for x in list(string.ascii_lowercase) if x != 'a'] + ['others'] 
     for name_key in name_key_list:
         try:
-            path_1 = 's3a://{}/music-name/name_key_1={}'.format(bucketName, name_key)
-            path_2 = 's3a://{}/tiktok-name/name_key_1={}'.format(bucketName, name_key)
-            df1 = spark.read.load(path_1).persist() # read music info (id, title, artist) from parquet
-            df2 = spark.read.load(path_2).persist() # read tiktok info (id, title, artist) from parquet
+            # read music info (id, title, artist) from parquet
+            df1 = cmi.read_parquet_s3(df, 
+                                      route='music-name',
+                                      partition='name_key_1', 
+                                      partition_key='name_key')
+            # read tiktok info (id, title, artist) from parquet
+            df2 = cmi.read_parquet_s3(df, 
+                                      route='tiktok-name', 
+                                      partition='name_key_1', 
+                                      partition_key='name_key')
+            df1 = df1.persist() 
+            df2 = df2.persist() 
            
             # calculate similarity pairs
             cts = CalTextSimilarity(sc)

@@ -40,9 +40,9 @@ class SimilaritySearch(object):
 
 class MusicProcessor(ComputeFeatures):
     def __init__(self, base_dir, filename):
+        super().__init__() 
         self.filename = filename
         self.path = os.path.join(base_dir, 'static', 'music', self.filename)
-        super().__init__() 
 
     def music_vectorization(self, spark):                     
         track_id = str(int(time.time() + int(self.filename.split('.mp3')[0])))

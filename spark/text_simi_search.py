@@ -36,7 +36,7 @@ if __name__ == '__main__':
     spark = SparkSession(sc).builder\
                             .appName('tiktok-music')\
                             .getOrCreate()
-    conf.set("spark.sql.caseSensitive", "true")
+    #conf.set("spark.sql.caseSensitive", "true")
 
     sc.addPyFile('text_processor.py')
     sc.addPyFile('posgresql.py')

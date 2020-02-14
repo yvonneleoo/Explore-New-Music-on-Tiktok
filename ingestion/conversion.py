@@ -10,13 +10,21 @@ if __name__ == '__main__':
     # set up coding environment and connection to s3
     os.environ["PYSPARK_PYTHON"]="/usr/bin/python3.7"
     os.environ["PYSPARK_DRIVER_PYTHON"]="/usr/bin/python3.7"
+    os.environ["SPARK_CLASSPATH"]='/usr/bin/postgresql-42.2.9.jar'
+    ## s3
+    spark_hn = os.environ["SPARK_HN"]
     s3_ = boto3.resource('s3')
     client = boto3.client('s3')
-    bucketName = 'yvonneleoo'
-    conf = SparkConf().setAppName('tiktok-music').setMaster('local')
+    bucketName = os.environ["Bucket_Name"]
+    ## spark config
+    conf = SparkConf().setAppName('tiktok-music').setMaster('spark:%s//:7077' % spark_hn)
     sc = SparkContext(conf=conf)
-    spark = SparkSession.builder.appName('tiktok-music').getOrCreate()
+    sc.addPyFile('text_processor.py')
+    sc.addPyFile('posgresql.py')
     sqlContext = SQLContext(sc)
+    spark = SparkSession(sc).builder\
+                            .appName('tiktok-music')\
+                            .getOrCreate()
     
     # initialization
     vect = Vectorization(client = client)

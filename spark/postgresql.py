@@ -7,7 +7,7 @@ class PosgreConnector(object):
     def __init__(self, sqlContext):
         self.db = 'music_tiktok'
         self.hostname = os.environ['POSTGRES_HN']
-        self.url = 'jdbc:postgresql://%s:5432/%s' % (self.hostname, self.db)
+        self.url = 'jdbc:postgresql://{}:5432/{}'.format(self.hostname, self.db)
         self.user = 'yvonneleoo'
         self.password = os.environ['POSTGRES_PWD']
         self.driver = 'org.postgresql.Driver'
@@ -15,7 +15,7 @@ class PosgreConnector(object):
         self.sqlContext = sqlContext
 
     def read_from_db(self, table_name):
-        return self.sqlContext.read.jdbc(url=self.url, table='public.%s'%table_name, properties=self.properties)
+        return self.sqlContext.read.jdbc(url=self.url, table='public.{}'.format(table_name), properties=self.properties)
 
     def write_to_db(self, df, table_name, mode='append'):
-        df.write.jdbc(url=self.url, table='public.%s'%table_name, mode=mode, properties=self.properties)
+        df.write.jdbc(url=self.url, table='public.{}'.format(table_name), mode=mode, properties=self.properties)

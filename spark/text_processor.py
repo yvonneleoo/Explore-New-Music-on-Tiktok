@@ -67,9 +67,6 @@ class CalTextSimilarity(object):
         else:
             return X.dot(Y) / float(denom)
 
-    def add_similarity(self, X, Y):
-        return X+Y
-
     def generate_lookup_table(self, sc, dataCombined):
 
         lookupTable = sc.broadcast(dataCombined.rdd.map(lambda x: (x['track_id'], {'song_title_IDF':x['song_title_IDF'], 'artist_name_IDF':x['artist_name_IDF']})).collectAsMap())

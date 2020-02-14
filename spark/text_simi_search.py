@@ -39,14 +39,14 @@ if __name__ == '__main__':
     # conf.set("spark.sql.caseSensitive", "true")
     sc.addPyFile('text_processor.py')
     sc.addPyFile('posgresql.py')
-    s3_usr = os.environ['S3_USR']
+    bucketName = os.environ['S3_USR']
 
     # loop throught each first letter
     name_key_list = [x for x in list(string.ascii_lowercase) if x != 'a'] + ['others'] 
     for name_key in name_key_list:
         try:
-            path_1 = 's3a://{}/music-name/name_key_1={}'.format(s3_usr, name_key)
-            path_2 = 's3a://{}/tiktok-name/name_key_1={}'.format(s3_usr, name_key)
+            path_1 = 's3a://{}/music-name/name_key_1={}'.format(bucketName, name_key)
+            path_2 = 's3a://{}/tiktok-name/name_key_1={}'.format(bucketName, name_key)
             df1 = spark.read.load(path_1).persist() # music
             df2 = spark.read.load(path_2).persist() # tiktok
            

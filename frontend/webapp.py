@@ -19,19 +19,14 @@ from music_processor import SimilaritySearch, MusicProcessor
 client = boto3.client('s3')
 os.environ["PYSPARK_PYTHON"]="/usr/bin/python3.7"
 os.environ["PYSPARK_DRIVER_PYTHON"]="/usr/bin/python3.7"
-conf = SparkConf().setAppName('tiktok-music')\
-                  .setMaster('spark://10.0.0.14:7077')
-sc = SparkContext(conf=conf)
-spark = SparkSession(sc).builder.appName('tiktok-music').getOrCreate()
-
 ss = SimilaritySearch()
 base_dir = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = './static/music'
 ALLOWED_EXTENSIONS = {'wav', 'mp3'} ## only allow users to upload wav and mp3 files
 
-db_ip = os.environ['POSGRES_IP']
+db_hn = os.environ['POSGRES_HN']
 db_pwd = os.environ['POSTGRES_PWD']
-link = 'postgresql://yvonneleoo:%s@%s:5432/music_tiktok'% (db_ip, db_pwd)
+link = 'postgresql://yvonneleoo:{}@{}:5432/music_tiktok'.format(db_hn, db_pwd)
 engine = create_engine(link) 
 
 ## genre info

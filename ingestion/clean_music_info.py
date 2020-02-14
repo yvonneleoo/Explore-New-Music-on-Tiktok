@@ -24,7 +24,7 @@ if __name__ == '__main__':
     s3_ = boto3.resource('s3')
     client = boto3.client('s3')
     bucketName = os.environ["Bucket_Name"]
-    conf = SparkConf().setAppName('tiktok-music').setMaster('spark:%s//:7077' % spark_hn)
+    conf = SparkConf().setAppName('tiktok-music').setMaster('spark:{}//:7077'.format(spark_hn))
     sc = SparkContext(conf=conf)
     sc.addPyFile('text_processor.py')
     sc.addPyFile('posgresql.py')

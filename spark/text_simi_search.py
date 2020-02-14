@@ -19,20 +19,23 @@ from posgresql import PosgreConnector
 
 if __name__ == '__main__':
     
-    # set up coding environment and connection to postgres
+    # set up coding environment and spark config
     os.environ["PYSPARK_PYTHON"]="/usr/bin/python3.7"
     os.environ["PYSPARK_DRIVER_PYTHON"]="/usr/bin/python3.7"
     os.environ["SPARK_CLASSPATH"]='/usr/bin/postgresql-42.2.9.jar'
-
+    ## spark 
+    spark_hn = os.environ["SPARK_HN"]
     conf = SparkConf()\
            .setAppName('tiktok-music')\
-           .setMaster('spark://10.0.0.12:7077')\
+           .setMaster('spark://{}:7077'.format(spark_hn))\
            .set("spark.executor.instances",4)\
            .set("spark.executor.cores",5)\
            .set("spark.executor.memory","6g")
     sc = SparkContext(conf=conf)
     sqlContext = SQLContext(sc)
-    spark = SparkSession(sc).builder.appName('tiktok-music').getOrCreate()
+    spark = SparkSession(sc).builder\
+                            .appName('tiktok-music')\
+                            .getOrCreate()
     conf.set("spark.sql.caseSensitive", "true")
 
     sc.addPyFile('text_processor.py')
@@ -42,10 +45,10 @@ if __name__ == '__main__':
     name_key_list = [x for x in list(string.ascii_lowercase) if x != 'a'] + ['others'] 
     
     for name_key in name_key_list:
-        print(name_key)
+
         try:
-            path_1  = 's3a://yvonneleoo/music-name/name_key_1=%s' % name_key
-            path_2 = 's3a://yvonneleoo/tiktok-name/name_key_1=%s' % name_key
+            path_1  = 's3a://yvonneleoo/music-name/name_key_1={}'.format(name_key)
+            path_2 = 's3a://yvonneleoo/tiktok-name/name_key_1={}'.format(name_key)
     
             df1 = spark.read.load(path_1).persist() # music
             df2 = spark.read.load(path_2).persist() # tiktok
@@ -80,7 +83,7 @@ if __name__ == '__main__':
             print(name_key, df.first())
 
             # write the table to posgresql
-            table_name = 'name_pair_%s' % name_key
+            table_name = 'name_pair_{}'.format(name_key)
             pc = PosgreConnector(sqlContext)
             pc.write_to_db(df, table_name)
 

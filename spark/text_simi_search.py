@@ -36,51 +36,32 @@ if __name__ == '__main__':
     spark = SparkSession(sc).builder\
                             .appName('tiktok-music')\
                             .getOrCreate()
-    #conf.set("spark.sql.caseSensitive", "true")
-
+    # conf.set("spark.sql.caseSensitive", "true")
     sc.addPyFile('text_processor.py')
     sc.addPyFile('posgresql.py')
+    s3_usr = os.environ['S3_USR']
 
     # loop throught each first letter
     name_key_list = [x for x in list(string.ascii_lowercase) if x != 'a'] + ['others'] 
-    
     for name_key in name_key_list:
-
         try:
-            path_1  = 's3a://yvonneleoo/music-name/name_key_1={}'.format(name_key)
-            path_2 = 's3a://yvonneleoo/tiktok-name/name_key_1={}'.format(name_key)
-    
+            path_1 = 's3a://{}/music-name/name_key_1={}'.format(s3_usr, name_key)
+            path_2 = 's3a://{}/tiktok-name/name_key_1={}'.format(s3_usr, name_key)
             df1 = spark.read.load(path_1).persist() # music
             df2 = spark.read.load(path_2).persist() # tiktok
            
             # calculate similarity pairs
-            cts = CalTextSimilarity()
-            dataCombined = cts.cal_tfidf(df1, df2)
-            dataCombined = dataCombined.persist()
-            lookupTable = cts.generate_lookup_table(sc, dataCombined)
-            pairId = df1.select('track_id').rdd\
-                        .flatMap(list)\
-                        .cartesian(df2.select('track_id')\
-                        .rdd.flatMap(list))\
-                        .persist()  ## change df name
-            pairProdDF = pairId.map(lambda x: x + cts.similarities(x[0], x[1], lookupTable))
-            pairProdDF = pairProdDF.persist()
-            
-            measureMapping = spark.createDataFrame(pairProdDF.map(lambda x: Row(music_track_id=x[0], 
-                                                                        tiktok_track_id=x[1], 
-                                                                        total_simi = float(x[2])+float(x[3]),
-                                                                        title_simi=float(x[2]),
-                                                                        artist_simi=float(x[3]))))
+            cts = CalTextSimilarity(sc)
+            measureMapping = cts.cal_text_simi(df1, df2)
             measureMapping = measureMapping.persist()    
             
+            # for each music record in the fma dataset, find the tiktok music record that has the highest similarity score
             w = Window().partitionBy("music_track_id")\
                         .orderBy(f.col("total_simi").desc())
             df = measureMapping.withColumn("rn", row_number().over(w))\
                                .where(col("rn") == 1)\
                                .drop('rn')\
                                .persist()
-            #df.show()
-            print(name_key, df.first())
 
             # write the table to posgresql
             table_name = 'name_pair_{}'.format(name_key)

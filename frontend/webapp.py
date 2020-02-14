@@ -20,21 +20,23 @@ client = boto3.client('s3')
 os.environ["PYSPARK_PYTHON"]="/usr/bin/python3.7"
 os.environ["PYSPARK_DRIVER_PYTHON"]="/usr/bin/python3.7"
 ss = SimilaritySearch()
-base_dir = os.path.abspath(os.path.dirname(__file__))
-UPLOAD_FOLDER = './static/music'
-ALLOWED_EXTENSIONS = {'wav', 'mp3'} ## only allow users to upload wav and mp3 files
-
+## posgres
 db_hn = os.environ['POSGRES_HN']
 db_pwd = os.environ['POSTGRES_PWD']
 link = 'postgresql://yvonneleoo:{}@{}:5432/music_tiktok'.format(db_hn, db_pwd)
 engine = create_engine(link) 
+## set up app dir and file restriction
+base_dir = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_FOLDER = './static/music'
+ALLOWED_EXTENSIONS = {'wav', 'mp3'} ## only allow users to upload wav and mp3 files
 
-## genre info
+## query for genre info
 genre_df = pd.read_sql("SELECT genre_id, title FROM meta_data_genres\
                         WHERE genre_id in (SELECT DISTINCT top_level FROM meta_data_genres)", engine)
 top_genre_id = genre_df['genre_id'].tolist()                                                                        
 top_genre = genre_df['title'].tolist()
 
+# app functions
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config["SESSION_PERMANENT"] = False

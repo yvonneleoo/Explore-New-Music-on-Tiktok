@@ -101,7 +101,7 @@ def song_result():
     vector = np.expand_dims(vector, axis=0)
     dists, ids = index.search(vector, 6)
     dists = dists[0, :]
-    ids = ["'m%s'"%str(id) for id in ids[0, :]]
+    ids = ["'m{}'".format(str(id)) for id in ids[0, :]]
     # get the song info for the most similar song
     song_info_query = "SELECT track_id, original_song_title, original_artist_name \
                        FROM music_clean_info\
@@ -127,11 +127,11 @@ def get_tiktok_info():
 def get_tiktok_data():
     id = request.args['id']
     letter = request.args['letter']
-    namepair_df_name = 'name_pair_%s' % letter
+    namepair_df_name = 'name_pair_{}'.format(letter)
     tiktok_id_query = "SELECT * FROM public." + namepair_df_name  + " WHERE music_track_id = '" + id + "'"
     similarity_df = pd.read_sql(tiktok_id_query, engine)
     artist_score, tiktok_id, title_score, total_score = similarity_df.iloc[0,0], similarity_df.iloc[0,2], similarity_df.iloc[0,3], similarity_df.iloc[0,4]  
-    tiktok_df_name = 'tiktok_info_%s' % letter
+    tiktok_df_name = 'tiktok_info_{}'.format(letter)
     tiktok_info_query ="SELECT * FROM public." + tiktok_df_name + " WHERE track_id = '" + tiktok_id + "'" 
     tiktok_df =  pd.read_sql(tiktok_info_query, engine)
     song_title, artist_name = tiktok_df.iloc[0, 7], tiktok_df.iloc[0, 8]
@@ -147,6 +147,5 @@ def get_tiktok_data():
 
 if __name__ == '__main__':
     app.secret_key = os.environ['FLASK_SECRET_KEY']
-    #app.run(host='0.0.0.0', debug=True)
     app.run(debug=True, host = '0.0.0.0', threaded = True, port='80')
  

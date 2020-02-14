@@ -69,7 +69,9 @@ class CalTextSimilarity(object):
 
     def generate_lookup_table(self, sc, dataCombined):
 
-        lookupTable = sc.broadcast(dataCombined.rdd.map(lambda x: (x['track_id'], {'song_title_IDF':x['song_title_IDF'], 'artist_name_IDF':x['artist_name_IDF']})).collectAsMap())
+        lookupTable = sc.broadcast(dataCombined.rdd.map(lambda x: (x['track_id'], 
+                                                                   {'song_title_IDF':x['song_title_IDF'], 
+                                                                    'artist_name_IDF':x['artist_name_IDF']})).collectAsMap())
 
         return lookupTable
         

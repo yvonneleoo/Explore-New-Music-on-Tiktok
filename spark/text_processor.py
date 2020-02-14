@@ -42,8 +42,8 @@ class CleanTrackName(object):
 
 class CalTextSimilarity(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, sc):
+        self.sc = sc
 
     def cal_tfidf(self, df1, df2):
         columns = ['song_title', 'artist_name']
@@ -81,3 +81,21 @@ class CalTextSimilarity(object):
         title_simi = self.cosine_similarity(X['song_title_IDF'], Y['song_title_IDF'])
         artist_simi = self.cosine_similarity(X['artist_name_IDF'], Y['artist_name_IDF'])
         return title_simi, artist_simi
+
+   def cal_text_simi(self, df1, df2):
+       dataCombined = self.cal_tfidf(df1, df2)
+       dataCombined = dataCombined.persist()
+       lookupTable = self.generate_lookup_table(self.sc, dataCombined)
+       pairId = df1.select('track_id').rdd\
+                         .flatMap(list)\
+                         .cartesian(df2.select('track_id')\
+                         .rdd.flatMap(list))\
+                         .persist()  ## change df name
+       pairProdDF = pairId.map(lambda x: x + cts.similarities(x[0], x[1], lookupTable))
+       pairProdDF = pairProdDF.persist()
+       measureMapping = spark.createDataFrame(pairProdDF.map(lambda x: Row(music_track_id=x[0], 
+                                                                       tiktok_track_id=x[1], 
+                                                                       total_simi = float(x[2])+float(x[3]),
+                                                                       title_simi=float(x[2]),
+                                                                       artist_simi=float(x[3]))))
+       return measureMapping 

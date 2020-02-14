@@ -1,0 +1,51 @@
+import os
+import numpy as np
+import pandas as pd
+import librosa
+import warnings
+from scipy import stats
+import json
+from pyspark.sql.session import SparkSession
+from pyspark.sql.types import FloatType
+import pyspark.sql.functions as f
+import time
+import pyspark
+import boto3
+from pyspark import SparkContext, SparkConf
+from pyspark.sql.session import SparkSession
+from pyspark.sql import DataFrameReader, SQLContext
+#import faiss
+from compute_features import ComputeFeatures
+import pyarrow
+
+class SimilaritySearch(object):
+    def __init__(self):
+        self.path = './music-vector-by-genres/genre='
+        
+    def get_vect_df(self, top_genre_id, spark):
+        music_vect = pd.read_parquet(self.path+top_genre_id, engine='pyarrow')
+        return music_vect    
+
+    def cal_index(self, new_df, vec_df):
+        vec = new_df.features[0]
+        max_df = vec_df['features']\
+                 .apply(lambda x: np.array(x) - np.array(vec))\
+                 .apply(lambda x: sum(x))
+        max_df = pd.DataFrame(max_df)
+        index = max_df.sort_values('features', ascending = True)\
+                 .head(5)\
+                 .index
+
+        return index
+
+class MusicProcessor(ComputeFeatures):
+    def __init__(self, base_dir, filename):
+        super().__init__() 
+        self.filename = filename
+        self.path = os.path.join(base_dir, 'static', 'music', self.filename)
+
+    def music_vectorization(self, spark):                     
+        track_id = str(int(time.time() + int(self.filename.split('.mp3')[0])))
+        vect = self.compute_features(self.path)
+        df = pd.DataFrame({"track_id":track_id, "features":[vect]})
+        return track_id, df, vect

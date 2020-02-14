@@ -1,0 +1,35 @@
+# aws
+sudo apt install awscli;
+aws configure;
+sudo apt install s3cmd;
+
+# zstd and jq to process tiktok data
+sudo apt install zstd;
+sudo apt install jq;
+
+# python3.7
+sudo apt install software-properties-common;
+sudo add-apt-repository ppa:deadsnakes/ppa;
+sudo apt update;
+sudo apt install python3.7;
+
+# pip 
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python3.7 get-pip.py --user;
+
+# python dependencies
+sudo python3.7 -m pip install pyspark;
+sudo python3.7 -m pip install boto3;
+sudo python3.7 -m pip install PyArrow>=0.8.0
+sudo python3.7 -m pip install numpy;
+sudo python3.7 -m pip install pandas;
+sudo python3.7 -m pip install flask;
+sudo python3.7 -m pip install flask-session;
+sudo apt install libpq-dev python3.7-dev;
+sudo python3.7 -m pip install Werkzeug==0.15.4;
+sudo python3.7 -m pip install psycopg2-binary;
+sudo python3.7 -m pip install sqlalchemy;
+## librosa and ffmpeg for processing music files
+sudo python3.7 -m pip install -U setuptools;
+sudo python3.7 -m pip install librosa;
+sudo apt install ffmpeg;

@@ -6,7 +6,8 @@ class PosgreConnector(object):
 
     def __init__(self, sqlContext):
         self.db = 'music_tiktok'
-        self.url = 'jdbc:postgresql://ec2-34-197-195-174.compute-1.amazonaws.com:5432/%s' % self.db
+        self.hostname = os.environ['POSTGRES_HN']
+        self.url = 'jdbc:postgresql://%s:5432/%s' % (self.hostname, self.db)
         self.user = 'yvonneleoo'
         self.password = os.environ['POSTGRES_PWD']
         self.driver = 'org.postgresql.Driver'

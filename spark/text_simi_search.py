@@ -47,8 +47,8 @@ if __name__ == '__main__':
         try:
             path_1 = 's3a://{}/music-name/name_key_1={}'.format(bucketName, name_key)
             path_2 = 's3a://{}/tiktok-name/name_key_1={}'.format(bucketName, name_key)
-            df1 = spark.read.load(path_1).persist() # music
-            df2 = spark.read.load(path_2).persist() # tiktok
+            df1 = spark.read.load(path_1).persist() # read music info (id, title, artist) from parquet
+            df2 = spark.read.load(path_2).persist() # read tiktok info (id, title, artist) from parquet
            
             # calculate similarity pairs
             cts = CalTextSimilarity(sc)

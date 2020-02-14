@@ -1,16 +1,14 @@
 import boto3
 import pyspark
-from pyspark import SparkContext, SparkConf
-from pyspark.sql.session import SparkSession
+
 from pyspark.sql.types import *
-from pyspark.sql import DataFrameReader, SQLContext
 from pyspark.sql.functions import *
 from pyspark.ml.feature import RegexTokenizer, StopWordsRemover, CountVectorizer, IDF
 from pyspark.sql.types import BooleanType
 from pyspark.sql import functions as f
 
-import pandas as pd
 import os
+import pandas as pd
 import time
 
 from posgresql import PosgreConnector
@@ -18,22 +16,23 @@ from text_processor import CleanTrackName
 
 if __name__ == '__main__':
 
-    # set up coding environment and connection to s3
+    # set up coding environment, connection to s3, and spark configure
     os.environ["PYSPARK_PYTHON"]="/usr/bin/python3.7"
     os.environ["PYSPARK_DRIVER_PYTHON"]="/usr/bin/python3.7"
     os.environ["SPARK_CLASSPATH"]='/usr/bin/postgresql-42.2.9.jar'
+    spark_hn = os.environ["SPARK_HN"]
     s3_ = boto3.resource('s3')
     client = boto3.client('s3')
-    bucketName = 'yvonneleoo'
-    conf = SparkConf().setAppName('tiktok-music').setMaster('spark://10.0.0.12:7077')
+    bucketName = os.environ["Bucket_Name"]
+    conf = SparkConf().setAppName('tiktok-music').setMaster('spark:%s//:7077' % spark_hn)
     sc = SparkContext(conf=conf)
     sc.addPyFile('text_processor.py')
     sc.addPyFile('posgresql.py')
-
     sqlContext = SQLContext(sc)
-    spark = SparkSession(sc).builder.appName('tiktok-music').getOrCreate()
-    ## spark.conf.set("spark.sql.execution.arrow.enabled", "true") 
-
+    spark = SparkSession(sc).builder\
+                            .appName('tiktok-music')\
+                            .getOrCreate()
+    
     # read from s3 and flatten the multiindex column names
     obj_track = client.get_object(Bucket=bucketName, Key='tiktok-music/fma_metadata/tracks.csv')
     df = pd.read_csv(obj_track['Body'], header=[0, 1], skipinitialspace=True).iloc[1:,:]
@@ -67,10 +66,12 @@ if __name__ == '__main__':
     ## clean info
    
     clean_info = track.join(artist,track.track_id == artist.track_id, how = 'inner')\
-                      .select(track['track_id'],track['title'].alias('song_title'),artist['name'].alias("artist_name"),track['genre_1'],track['original_title'].alias('original$
-                      #.withColumn('name_key_2', substring(artist['name'],0,1))
+                      .select(track['track_id'],track['title'].alias('song_title'),
+                              artist['name'].alias("artist_name"),
+                              track['genre_1'],track['original_title'].alias('original'))
     clean_info = clean_info.join(genres, clean_info.genre_1 == genres.genre_id,how = 'left')\
-                           .select(clean_info['*'],genres['title'].alias('subgenre_name'),genres['top_level']).sort(col('song_title'))
+                           .select(clean_info['*'],genres['title'].alias('subgenre_name'),
+                                   genres['top_level']).sort(col('song_title'))
 
     clean_info = clean_info.dropDuplicates(['song_title', 'artist_name'])
     clean_info = ctn.add_name_key(clean_info, which='music')

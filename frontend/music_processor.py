@@ -29,7 +29,7 @@ class SimilaritySearch(object):
     def cal_index(self, new_df, vec_df):
         vec = new_df.features[0]
         max_df = vec_df['features']\
-                 .apply(lambda x: np.array(x) - np.array(vec))\
+                 .apply(lambda x: (np.array(x) - np.array(vec))**2)\
                  .apply(lambda x: sum(x))
         max_df = pd.DataFrame(max_df)
         index = max_df.sort_values('features', ascending = True)\

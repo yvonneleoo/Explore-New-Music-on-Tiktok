@@ -96,17 +96,12 @@ def song_result():
     track_id, new_df, vect = mp.music_vectorization(spark)
     # search based on the vector
     vect_df = ss.get_vect_df(genre_id, spark)
-    index = ss.write_to_faiss(new_df, vect_df)
-    vector = np.array(vect, dtype=np.float32)
-    vector = np.expand_dims(vector, axis=0)
-    dists, ids = index.search(vector, 6)
-    dists = dists[0, :]
-    ids = ["'m{}'".format(str(id)) for id in ids[0, :]]
+    index = ss.cal_index(new_df, vect_df)
+    ids = ["'m{}'".format(str(id)) for id in index]
     # get the song info for the most similar song
-    song_info_query = "SELECT track_id, original_song_title, original_artist_name \
-                       FROM music_clean_info\
-                       WHERE track_id in"
-    ids_format = "{}," * 6
+    song_info_query = "SELECT track_id, original_song_title, original_artist_name\
+                       FROM public.music_clean_info WHERE track_id in"
+    ids_format = "{}," * 5
     song_info_query += '(' + ids_format[:-1] + ')'
     song_query = song_info_query.format(*ids)
     song_df = pd.read_sql(song_query, engine)

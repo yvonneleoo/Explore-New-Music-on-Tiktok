@@ -41,6 +41,7 @@ if __name__ == '__main__':
     sc.addPyFile('posgresql.py')
     
     cmi = CleanMusicInfo(spark)
+    cts = CalTextSimilarity(sc)
     
     # loop throught each first letter
     name_key_list = [x for x in list(string.ascii_lowercase) if x != 'a'] + ['others'] 
@@ -60,7 +61,7 @@ if __name__ == '__main__':
             df2 = df2.persist() 
            
             # calculate similarity pairs
-            cts = CalTextSimilarity(sc)
+            
             measureMapping = cts.cal_text_simi(df1, df2)
             measureMapping = measureMapping.persist()    
             

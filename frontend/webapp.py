@@ -95,7 +95,7 @@ def song_result():
     mp = MusicProcessor(base_dir, filename) 
     track_id, new_df, vect = mp.music_vectorization(spark)
     # search based on the vector
-    vect_df = ss.get_vect_df(genre_id, spark)
+    vect_df = ss.get_vect_df(genre_id, engine)
     index = ss.cal_index(new_df, vect_df)
     ids = ["'m{}'".format(str(id)) for id in index]
     # get the song info for the most similar song

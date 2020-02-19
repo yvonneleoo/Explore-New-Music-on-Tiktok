@@ -17,7 +17,7 @@ if __name__ == '__main__':
     client = boto3.client('s3')
     bucketName = os.environ["Bucket_Name"]
     ## spark config
-    conf = SparkConf().setAppName('tiktok-music').setMaster('spark:%s//:7077' % spark_hn)
+    conf = SparkConf().setAppName('tiktok-music').setMaster('spark:{}//:7077'.format(spark_hn))
     sc = SparkContext(conf=conf)
     sc.addPyFile('text_processor.py')
     sc.addPyFile('posgresql.py')
@@ -61,11 +61,15 @@ if __name__ == '__main__':
                 except Exception as e:
                     print('{}: {}'.format(track_id, repr(e)))
                     
-     ## store by genres   
+     ## store by genres
+     ## from s3 to postgres. if I were to do this project again, I would store the vectors directly to posgres in the former steps.
+     
      pc = PosgreConnector(sqlContext)
      music_info = pc.read_from_db('clean_music_info')
      top_level = [a[0] for a in np.array(music_info.select('top_level').distinct().collect())]
      columns = [f.col('feature_' + str(i)) for i in range(245)]
+     
+     music_vect = spark.read.load("s3a://yvonneleoo/music-vector/")
      for genre in top_level:
        
          if genre:
@@ -73,15 +77,19 @@ if __name__ == '__main__':
                                                 .select('track_id').collect()[0].track_id]
              df = music_vect.filter(music_vect.track_id.isin(id_list))\
                             .withColumn('genre', lit(genre))\
-                            .withColumn('features', f.array(columns))
+                            .withColumn('features', f.array(columns))\
+                            .select('track_id', 'genre', 'features')\
+                            .persist()
+            pc.write_to_db(df,'public.music-vector-by-genres_genre={}'.format(genre))
+                            
          else:
              id_list = [a[0] for a in music_info.filter(col('top_level')== genre)\
                                                 .select('track_id').collect()[0].track_id]
              df = music_vect.filter(music_vect.track_id.isin(id_list))\
                             .withColumn('genre', lit('None'))\
-                            .withColumn('features', f.array(columns))
-      
-         df.select('track_id', 'genre', 'features')\
-           .coalesce(1).write.partitionBy('genre')\
-           .option("header","false")\
-           .parquet(path="s3a://yvonneleoo/music-vector-by-genres/", mode="append")
+                            .withColumn('features', f.array(columns))\
+                            .select('track_id', 'genre', 'features')\
+                            .persist()
+                            
+            pc.write_to_db(df,'public.music-vector-by-genres_genre={}'.format(genre))
+          

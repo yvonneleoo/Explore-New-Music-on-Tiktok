@@ -9,7 +9,10 @@ class ComputeFeatures(object):
         pass
 
     def columns(self):
-	    feature_sizes = dict(zcr=1, chroma_stft=12, spectral_centroid=1, spectral_rolloff=1, mfcc=20)
+    """
+    define feature dimensions
+    """
+        feature_sizes = dict(zcr=1, chroma_stft=12, spectral_centroid=1, spectral_rolloff=1, mfcc=20)
         moments = ('mean', 'std', 'skew', 'kurtosis', 'median', 'min', 'max')
         columns1 = []
         for name, size in feature_sizes.items():
@@ -23,7 +26,10 @@ class ComputeFeatures(object):
 
 
     def compute_features(self, audio_dir):
-    	features = pd.Series(index=self.columns(), dtype=np.float32, name=audio_dir)
+    """
+    audio features extraction
+    """
+        features = pd.Series(index=self.columns(), dtype=np.float32, name=audio_dir)
 
         def feature_stats(name, values):
             features[name, 'mean'] = np.mean(values, axis=1)
@@ -35,7 +41,7 @@ class ComputeFeatures(object):
             features[name, 'max'] = np.max(values, axis=1)
 
         try:
-            x, sr = librosa.load(audio_dir, sr=None, mono=True)  
+            x, sr = librosa.load(audio_dir, sr=None, mono=True)
             f = librosa.feature.zero_crossing_rate(x, frame_length=2048, hop_length=512)
             feature_stats('zcr', f)
             cqt = np.abs(librosa.cqt(x, sr=sr, hop_length=512, bins_per_octave=12,
@@ -62,3 +68,8 @@ class ComputeFeatures(object):
             print('{}: {}'.format(audio_dir, repr(e)))
 
         return np.array(features).tolist()
+
+
+"""
+source code: https://github.com/mdeff/fma/blob/master/features.py
+"""

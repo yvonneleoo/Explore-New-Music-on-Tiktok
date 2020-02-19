@@ -8,6 +8,9 @@ class ComputeFeatures(object):
         pass
 
     def columns(self):
+    """
+    define feature dimensions
+    """
 	    feature_sizes = dict(zcr=1, chroma_stft=12, spectral_centroid=1, spectral_rolloff=1, mfcc=20)
         moments = ('mean', 'std', 'skew', 'kurtosis', 'median', 'min', 'max')
         columns1 = []
@@ -22,6 +25,9 @@ class ComputeFeatures(object):
 
 
     def compute_features(self, audio_dir):
+    """
+    audio features extraction
+    """
     	features = pd.Series(index=self.columns(), dtype=np.float32, name=audio_dir)
 
         def feature_stats(name, values):
@@ -61,3 +67,8 @@ class ComputeFeatures(object):
             print('{}: {}'.format(audio_dir, repr(e)))
 
         return np.array(features).tolist()
+
+
+"""
+source code: https://github.com/mdeff/fma/blob/master/features.py
+"""

@@ -16,6 +16,9 @@ class CleanTrackName(object):
         pass
 
     def remove_noise(self, df1, col_name):
+    """
+    clean up the noise info (e.g. version) in title/artist name
+    """
         df_clean = df1.withColumn(col_name+'_', regexp_replace(col(col_name), '\([\w|\W]+\)', ''))\
                       .withColumn(col_name+'_', regexp_replace(col(col_name+'_'), '[_#+\W+\".!?\\-\/]', ''))
         df_clean = df_clean.filter(df_clean[col_name+'_'] != '')\
@@ -25,12 +28,18 @@ class CleanTrackName(object):
         return df_clean
 
     def is_digit(self, val):
+    """
+    to help categorize song titles with the first letter to be digits
+    """
         if val:
             return val.isdigit()
         else:
             return False
 
     def add_name_key(self, df1, which='tiktok'):
+    """
+    get the first letter of the song title to partition
+    """
         if which == 'tiktok':
             mark = 't'
         else:
@@ -148,6 +157,9 @@ class CalTextSimilarity(object):
         self.sc = sc
 
     def cal_tfidf(self, df1, df2):
+    """
+    calculate tfidf score to vectorize text
+    """
         columns = ['song_title', 'artist_name']
         dataCombined = df1.union(df2)
         preProcStages = []
@@ -163,6 +175,9 @@ class CalTextSimilarity(object):
         return dataCombined.select('track_id', 'song_title_IDF', 'artist_name_IDF')
 
     def cosine_similarity(self, X, Y):
+    """
+    udf cosine similarity function
+    """
         denom = X.norm(2) * Y.norm(2)
         if denom == 0.0:
             return -1.0
@@ -170,7 +185,9 @@ class CalTextSimilarity(object):
             return X.dot(Y) / float(denom)
 
     def generate_lookup_table(self, sc, dataCombined):
-
+    """
+    generate lookuptable for vectors for fast look up
+    """
         lookupTable = sc.broadcast(dataCombined.rdd.map(lambda x: (x['track_id'], 
                                                                    {'song_title_IDF':x['song_title_IDF'], 
                                                                     'artist_name_IDF':x['artist_name_IDF']})).collectAsMap())
@@ -178,12 +195,18 @@ class CalTextSimilarity(object):
         return lookupTable
         
     def similarities(self, idMusic, idTiktok, lookupTable):
+    """
+    functions to calculate the similarity score
+    """
         X, Y = lookupTable.value[idMusic], lookupTable.value[idTiktok] 
         title_simi = self.cosine_similarity(X['song_title_IDF'], Y['song_title_IDF'])
         artist_simi = self.cosine_similarity(X['artist_name_IDF'], Y['artist_name_IDF'])
         return title_simi, artist_simi
 
    def cal_text_simi(self, df1, df2):
+   """
+   main function to calculate text similarities
+   """
        dataCombined = self.cal_tfidf(df1, df2)
        dataCombined = dataCombined.persist()
        lookupTable = self.generate_lookup_table(self.sc, dataCombined)

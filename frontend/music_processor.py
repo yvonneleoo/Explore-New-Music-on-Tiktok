@@ -5,25 +5,20 @@ import librosa
 import warnings
 from scipy import stats
 import json
-from pyspark.sql.session import SparkSession
-from pyspark.sql.types import FloatType
-import pyspark.sql.functions as f
 import time
 import pyspark
 import boto3
-from pyspark import SparkContext, SparkConf
-from pyspark.sql.session import SparkSession
-from pyspark.sql import DataFrameReader, SQLContext
 #import faiss
 from compute_features import ComputeFeatures
-import pyarrow
+#import pyarrow
+from postgresql import PosgreConnector
 
-class SimilaritySearch(object):
+class SimilaritySearch():
     def __init__(self):
-        self.path = './music-vector-by-genres/genre='
+        self.path = 'public.music-vector-by-genres_genre='
         
-    def get_vect_df(self, top_genre_id, spark):
-        music_vect = pd.read_parquet(self.path+top_genre_id, engine='pyarrow')
+    def get_vect_df(self, top_genre_id, engine):
+        music_vect = pd.read_sql("SELECT * FROM {}{}".format(self.path, top_genre_id), engine)
         return music_vect    
 
     def cal_index(self, new_df, vec_df):

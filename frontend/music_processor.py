@@ -18,10 +18,16 @@ class SimilaritySearch():
         self.path = 'public.music-vector-by-genres_genre='
         
     def get_vect_df(self, top_genre_id, engine):
+    """
+    load music matrixes within the same genre
+    """
         music_vect = pd.read_sql("SELECT * FROM {}{}".format(self.path, top_genre_id), engine)
         return music_vect    
 
     def cal_index(self, new_df, vec_df):
+    """
+    calculate the similarity between the uploaded music vector and pre-calculated music matrixes
+    """
         vec = new_df.features[0]
         max_df = vec_df['features']\
                  .apply(lambda x: (np.array(x) - np.array(vec))**2)\
@@ -39,7 +45,10 @@ class MusicProcessor(ComputeFeatures):
         self.filename = filename
         self.path = os.path.join(base_dir, 'static', 'music', self.filename)
 
-    def music_vectorization(self, spark):                     
+    def music_vectorization(self, spark):
+    """
+    vectorize the uploaded music file by extracting features
+    """
         track_id = str(int(time.time() + int(self.filename.split('.mp3')[0])))
         vect = self.compute_features(self.path)
         df = pd.DataFrame({"track_id":track_id, "features":[vect]})

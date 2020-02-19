@@ -15,7 +15,13 @@ class PosgreConnector(object):
         self.sqlContext = sqlContext
 
     def read_from_db(self, table_name):
+    """
+    read from the postgres db
+    """
         return self.sqlContext.read.jdbc(url=self.url, table='public.{}'.format(table_name), properties=self.properties)
 
     def write_to_db(self, df, table_name, mode='append'):
+    """
+    write to the postgres db
+    """
         df.write.jdbc(url=self.url, table='public.{}'.format(table_name), mode=mode, properties=self.properties)

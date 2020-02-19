@@ -18,6 +18,9 @@ class Vectorization(ComputeFeatures):
 	super().__init__()
 	
     def convert(self, bucketName, key, track_id, lst):
+    """
+    vectorize music files
+    """
     	## download to ec2 master first 
         local_path = './music/' + key.split('/')[3]
         with open(local_path,'wb') as data:

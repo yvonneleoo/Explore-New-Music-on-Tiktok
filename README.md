@@ -30,9 +30,11 @@ Stored the clean TikTok data in PostgresSQL, partitioning by the first letter of
   
 ### Frontend workflow:
 - User select a genre, and upload a music file ('mp3' or 'wav' format).
-- Vectorize the music file and write to Spark; load vectors for music in the same genre.
-- Performed vector-based similiarity search, and return list of indexes ('fma_track_id').
-- Query by 'fma_track_id', return the music info data; query by 'fma_track_id', return the 'tiktok_track_id', tiktok music info, and cover photos of videos that used the music. 
+- Vectorize the music file and load the matrix for music in the same genre.
+- Performed vector-based similiarity search, and return list of indeces ('fma_track_id').
+- Query by 'fma_track_id', return the music info data of the similar music; 
+  query by 'fma_track_id', return the 'tiktok_track_id' for most likely records on TikTok database based on song title and artist name;
+  query by 'tiktok_track_id', return tiktok music info, and cover photos of videos that may used the similar music. 
 
 Environment
 -----------------
@@ -41,11 +43,9 @@ Environment
 
 Limitations and To Do
 -----------------
-Currently, the overlap between the FMA music dataset and TikTok dataset is not big enough to guarantee high accuracy.  
+- Currently, the overlap between the FMA music dataset and TikTok dataset is not big enough to guarantee high accuracy of matching two datasets by song title/artist name. The next step would be adding functions to update the music and TikTok dataset automatically;
 
-The next step would be:
-- Added functions to update the music and TikTok dataset automatically;
-- Added functions to support searching the similar music by music titles/artists;
+- Currently, I pre-filter the music similarity search by genre, extracting features based on references on music genre classfication, and use euclidean distance recommender system, which may be not accurate in our task. The next step would be testing out other feature extraction, and other loss functions.
 
 Reference
 -----------------

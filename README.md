@@ -43,7 +43,7 @@ Environment
 
 Limitations and To Do
 -----------------
-- Currently, the overlap between the FMA music dataset and TikTok dataset is not big enough to guarantee high accuracy of matching two datasets by song title/artist name. The next step would be adding functions to update the music and TikTok dataset automatically;
+- Currently, the overlap between the FMA music dataset and TikTok dataset is not big enough to guarantee high accuracy of matching two datasets by song title/artist name. The next step would be adding functions to update the music and TikTok dataset automatically.
 
 - Currently, I pre-filter the music similarity search by genre, extracting features based on references on music genre classfication, and use euclidean distance recommender system, which may be not accurate in our task. The next step would be testing out other feature extraction, and other loss functions.
 

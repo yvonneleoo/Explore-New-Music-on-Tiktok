@@ -7,7 +7,7 @@ Streaming service has given artists more right to connect to their audience dire
 
 But how could artists know what content could match their music, from audiences' aspect? On TikTok, you could not search by similar music; and on music similarity searching platform, you could not see the potential application. I built an app to try to match these two points. 
 
-By uploading a music file, you could search the most similar music to yours, and further search the most likely applications on TikTok.  Visit [dataeng.today](http://dataeng.today) to explore it. 
+By uploading a music file, you could search the most similar music to yours, and further search the most likely applications on TikTok.  For more information, please see the [slide](https://docs.google.com/presentation/d/1bZjV8vCN0PYrWCsVyyOveL65YaFbEzNgaEtVCnBE7NE/edit?usp=sharing). 
 
 Pipeline
 -----------------

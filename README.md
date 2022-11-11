@@ -7,7 +7,7 @@ Streaming service has given artists more right to connect to their audience dire
 
 But how could artists know what content could match their music, from audiences' aspect? On TikTok, you could not search by similar music; and on music similarity searching platform, you could not see the potential application. I built an app to try to match these two points. 
 
-By uploading a music file, you could search the most similar music to yours, and further search the most likely applications on TikTok.  Visit [dataeng.today](http://dataeng.today) to explore it. 
+By uploading a music file, you could search the most similar music to yours, and further search the most likely applications on TikTok.  For more information, please see the [slide](https://docs.google.com/presentation/d/1bZjV8vCN0PYrWCsVyyOveL65YaFbEzNgaEtVCnBE7NE/edit?usp=sharing). 
 
 Pipeline
 -----------------
@@ -30,10 +30,11 @@ Stored the clean TikTok data in PostgresSQL, partitioning by the first letter of
   
 ### Frontend workflow:
 - User select a genre, and upload a music file ('mp3' or 'wav' format).
-- Vectorize the music file and load vectors for music in the same genre.
-- Performed vector-based similiarity search, and return list of indexes ('fma_track_id').
+
+- Vectorize the music file and load the matrix for music in the same genre.
+- Performed vector-based similiarity search, and return list of indeces ('fma_track_id').
 - Query by 'fma_track_id', return the music info data of the similar music; 
-  query by 'fma_track_id', return the 'tiktok_track_id' of most likely record on TikTok database based on song title and artist name;
+  query by 'fma_track_id', return the 'tiktok_track_id' for most likely records on TikTok database based on song title and artist name;
   query by 'tiktok_track_id', return tiktok music info, and cover photos of videos that may used the similar music. 
 
 Environment
@@ -43,14 +44,9 @@ Environment
 
 Limitations and To Do
 -----------------
-1. Currently, the overlap between the FMA music dataset and TikTok dataset is not big enough to guarantee high accuracy of matching two datasets by song title/artist name.  
+- Currently, the overlap between the FMA music dataset and TikTok dataset is not big enough to guarantee high accuracy of matching two datasets by song title/artist name. The next step would be adding functions to update the music and TikTok dataset automatically.
+- Currently, I pre-filter the music similarity search by genre, extracting features based on references on music genre classfication, and use euclidean distance recommender system, which may be not accurate in our task. The next step would be testing out other feature extraction, and other loss functions.
 
-The next step would be:
-- Added functions to update the music and TikTok dataset automatically;
-
-2. Currently, I pre-filter the music similarity search by genre, extracting features based on references on music genre classfication, and use euclidean distance recommender system, which may be not accurate in our task. 
-
-The next step would be testing out other feature extraction, and other loss functions.
 
 Reference
 -----------------

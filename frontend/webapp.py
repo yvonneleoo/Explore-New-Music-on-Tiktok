@@ -1,9 +1,9 @@
 import os
-from flask import Flask, flash, request, redirect, url_for, send_from_directory, render_template, session
+from flask import Flask, flash, request, redirect, \
+    url_for, send_from_directory, render_template, session
 from flask_session import Session
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine
 from sqlalchemy import create_engine
 import boto3
 import faiss
@@ -13,6 +13,9 @@ import pandas as pd
 import re
 from pyspark import SparkContext, SparkConf
 from pyspark.sql.session import SparkSession
+
+import sys
+sys.path.append("../processor")
 from music_processor import SimilaritySearch, MusicProcessor
 
 # set up coding environment

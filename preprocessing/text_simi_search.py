@@ -7,15 +7,18 @@ import string
 import pyspark
 import boto3
 from pyspark import SparkContext, SparkConf
+from pyspark.sql import DataFrameReader, \
+  SQLContext, Row, Window
 from pyspark.sql.session import SparkSession
-from pyspark.sql import DataFrameReader, SQLContext
 from pyspark.sql.functions import *
-import pyspark.sql.functions as f
-from pyspark.sql import Row
-from pyspark.sql import Window
+# import pyspark.sql.functions as f
 
-from text_processor import CleanMusicInfo, CalTextSimilarity
+import sys
+sys.path.append("../utils")
+sys.path.append("../processor")
 from posgresql import PosgreConnector
+from text_processor import CleanMusicInfo, CalTextSimilarity
+
 
 if __name__ == '__main__':
     
@@ -37,8 +40,8 @@ if __name__ == '__main__':
                             .appName('tiktok-music')\
                             .getOrCreate()
     # conf.set("spark.sql.caseSensitive", "true")
-    sc.addPyFile('text_processor.py')
-    sc.addPyFile('posgresql.py')
+    sc.addPyFile('../processor/text_processor.py')
+    sc.addPyFile('../utils/posgresql.py')
     
     cmi = CleanMusicInfo(spark)
     cts = CalTextSimilarity(sc)
@@ -67,7 +70,7 @@ if __name__ == '__main__':
             
             # for each music record in the fma dataset, find the tiktok music record that has the highest similarity score
             w = Window().partitionBy("music_track_id")\
-                        .orderBy(f.col("total_simi").desc())
+                        .orderBy(col("total_simi").desc()) ## f.col()
             df = measureMapping.withColumn("rn", row_number().over(w))\
                                .where(col("rn") == 1)\
                                .drop('rn')\

@@ -3,8 +3,12 @@ import boto3
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import FloatType
 import time
-from vectorization import Vectorization
+
+import sys
+sys.path.append("../utils")
+sys.path.append("../processor")
 from posgresql import PosgreConnector
+from music_processor import Vectorization
 
 if __name__ == '__main__':   
     # set up coding environment and connection to s3
@@ -19,8 +23,8 @@ if __name__ == '__main__':
     ## spark config
     conf = SparkConf().setAppName('tiktok-music').setMaster('spark:{}//:7077'.format(spark_hn))
     sc = SparkContext(conf=conf)
-    sc.addPyFile('text_processor.py')
-    sc.addPyFile('posgresql.py')
+    sc.addPyFile('../processor/music_processor.py')
+    sc.addPyFile('../utils/posgresql.py')
     sqlContext = SQLContext(sc)
     spark = SparkSession(sc).builder\
                             .appName('tiktok-music')\

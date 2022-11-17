@@ -1,6 +1,19 @@
+import os
 import numpy as np
 import pandas as pd
 import librosa
+import warnings
+from scipy import stats
+import json
+import time
+import pyspark
+import boto3
+#import faiss
+#import pyarrow
+
+import sys
+sys.path.append('../')
+from utils.postgresql import PosgreConnector
 
 class ComputeFeatures(object):
 
@@ -11,7 +24,7 @@ class ComputeFeatures(object):
     """
     define feature dimensions
     """
-	    feature_sizes = dict(zcr=1, chroma_stft=12, spectral_centroid=1, spectral_rolloff=1, mfcc=20)
+        feature_sizes = dict(zcr=1, chroma_stft=12, spectral_centroid=1, spectral_rolloff=1, mfcc=20)
         moments = ('mean', 'std', 'skew', 'kurtosis', 'median', 'min', 'max')
         columns1 = []
         for name, size in feature_sizes.items():
@@ -28,7 +41,7 @@ class ComputeFeatures(object):
     """
     audio features extraction
     """
-    	features = pd.Series(index=self.columns(), dtype=np.float32, name=audio_dir)
+        features = pd.Series(index=self.columns(), dtype=np.float32, name=audio_dir)
 
         def feature_stats(name, values):
             features[name, 'mean'] = np.mean(values, axis=1)
@@ -69,6 +82,67 @@ class ComputeFeatures(object):
         return np.array(features).tolist()
 
 
+class Vectorization(ComputeFeatures):
+    
+    def __init__(self, client):
+        self.client = client
+        super().__init__()
+    
+    def convert(self, bucketName, key, track_id, lst):
+    """
+    vectorize music files
+    """
+        ## download to ec2 master first 
+        local_path = './music/' + key.split('/')[3]
+        with open(local_path,'wb') as data:
+            self.client.download_file(bucketName, key, local_path)
+        ## vectorizatin and store into df format
+        start_time = time.time()
+        lst.append(tuple([track_id] + self.compute_features(local_path)))
+        duration = round(time.time() - start_time, 4)
+        print(f"vectorization in {duration} seconds") 
+
 """
 source code: https://github.com/mdeff/fma/blob/master/features.py
 """
+
+class SimilaritySearch():
+    def __init__(self):
+        self.path = 'public.music-vector-by-genres_genre='
+        
+    def get_vect_df(self, top_genre_id, engine):
+    """
+    load music matrixes within the same genre
+    """
+        music_vect = pd.read_sql("SELECT * FROM {}{}".format(self.path, top_genre_id), engine)
+        return music_vect    
+
+    def cal_index(self, new_df, vec_df):
+    """
+    calculate the similarity between the uploaded music vector and pre-calculated music matrixes
+    """
+        vec = new_df.features[0]
+        max_df = vec_df['features']\
+                 .apply(lambda x: (np.array(x) - np.array(vec))**2)\
+                 .apply(lambda x: sum(x))
+        max_df = pd.DataFrame(max_df)
+        index = max_df.sort_values('features', ascending = True)\
+                 .head(5)\
+                 .index
+
+        return index
+
+class MusicProcessor(ComputeFeatures):
+    def __init__(self, base_dir, filename):
+        super().__init__() 
+        self.filename = filename
+        self.path = os.path.join(base_dir, 'static', 'music', self.filename)
+
+    def music_vectorization(self, spark):
+    """
+    vectorize the uploaded music file by extracting features
+    """
+        track_id = str(int(time.time() + int(self.filename.split('.mp3')[0])))
+        vect = self.compute_features(self.path)
+        df = pd.DataFrame({"track_id":track_id, "features":[vect]})
+        return track_id, df, vect
